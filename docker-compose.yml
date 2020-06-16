@@ -1,0 +1,97 @@
+version: '3.1'
+services:
+  nginx:
+    container_name: magento2_nginx
+    image: nginx:latest
+    volumes:
+     - ./nginx_conf/default.conf:/etc/nginx/conf.d/default.conf
+     - ../novosabordeviver-m2/app/magento:/usr/share/nginx/www
+    working_dir: /usr/share/nginx/www
+    ports:
+      - 80:80
+      - 443:443
+    expose:
+      - 443
+    links:
+      - db
+      - php:magento2_php
+    depends_on:
+      - php
+    networks:
+      magento2_net:
+        ipv4_address: 172.22.0.102
+
+  php:
+    container_name: magento2_php
+    image: lima195/php-fpm7.2:firsttry
+    user: john
+    volumes:
+     - ../novosabordeviver-m2/app/magento:/usr/share/nginx/www
+     - ./etc/php_ini/docker-php-ext-xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+     - ./etc/php_ini/php.ini:/usr/local/etc/php/php.ini
+    working_dir: /usr/share/nginx/www
+    ports:
+      - 9000:9000
+    networks:
+      magento2_net:
+        ipv4_address: 172.22.0.104
+
+  db:
+    container_name: magento2_mysql
+    image: mysql:5.7
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - ./volumes/mysql/volume:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: magento
+      MYSQL_PASSWORD: magento
+      MYSQL_DATABASE: magento
+    ports:
+      - 3306:3306
+    networks:
+      magento2_net:
+        ipv4_address: 172.22.0.108
+
+  adminer:
+    container_name: magento2_adminer
+    image: adminer
+    ports:
+      - 8222:8080
+    networks:
+      magento2_net:
+        ipv4_address: 172.22.0.112
+    links:
+      - db
+
+  redis:
+    container_name: magento2_redis
+    image: redis
+    command: redis-server --requirepass magento
+    ports:
+      - "6379:6379"
+    networks:
+      magento2_net:
+        ipv4_address: 172.22.0.116
+
+  # assets:
+  #   container_name: magento2_assets
+  #   build:
+  #     context: .
+  #     dockerfile: ./assets/Dockerfile
+  #   volumes:
+  #    - ../novosabordeviver-m2/app/magento:/usr/share/nginx/www
+  #   working_dir: /usr/share/nginx/www
+  #   ports:
+  #     - 9019:9019
+  #   tty: true
+  #   networks:
+  #     magento2_net:
+  #       ipv4_address: 172.22.0.114
+
+networks:
+  magento2_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.22.0.0/16
