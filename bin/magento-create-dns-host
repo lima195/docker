@@ -1,2 +1,2 @@
 #!/bin/bash
-echo "172.22.0.102 dsdv.com" | sudo tee -a /etc/hosts
+echo "172.22.0.102 arcade.fire" | sudo tee -a /etc/hosts
